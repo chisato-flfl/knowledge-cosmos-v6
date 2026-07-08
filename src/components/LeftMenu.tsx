@@ -4,6 +4,7 @@ import { NODE_COLOR, NODE_LABEL } from '../types';
 interface Props {
   nodes: StarNode[];
   onAdd: (type: StarType) => void;
+  onScanBookshelf: () => void;
   onDemo: () => void;
   onSelectNode: (id: string) => void;
 }
@@ -14,7 +15,7 @@ const BTN_CONFIG: { type: StarType; icon: string; label: string }[] = [
   { type: 'question',   icon: '✨', label: '問いを追加' },
 ];
 
-export default function LeftMenu({ nodes, onAdd, onDemo, onSelectNode }: Props) {
+export default function LeftMenu({ nodes, onAdd, onScanBookshelf, onDemo, onSelectNode }: Props) {
   const bookCount = nodes.filter(n => n.type === 'book').length;
   const expCount  = nodes.filter(n => n.type === 'experience').length;
   const qCount    = nodes.filter(n => n.type === 'question').length;
@@ -52,6 +53,28 @@ export default function LeftMenu({ nodes, onAdd, onDemo, onSelectNode }: Props) 
 
       {/* Add buttons */}
       <nav className="px-3 pt-5 flex flex-col gap-1.5">
+        {/* Bookshelf scan */}
+        <button
+          onClick={onScanBookshelf}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 text-left"
+          style={{ color: 'rgba(255,255,255,0.78)', background: 'transparent', border: '1px solid transparent' }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = `${NODE_COLOR.book}14`;
+            e.currentTarget.style.borderColor = `${NODE_COLOR.book}30`;
+            e.currentTarget.style.color = '#fff';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.borderColor = 'transparent';
+            e.currentTarget.style.color = 'rgba(255,255,255,0.78)';
+          }}
+        >
+          <span className="text-base w-6 text-center">📷</span>
+          <span>本棚を撮影する</span>
+        </button>
+
+        <div className="my-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
+
         {BTN_CONFIG.map(({ type, icon, label }) => (
           <button
             key={type}

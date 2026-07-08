@@ -3,6 +3,7 @@ import type { StarNode, Connection, StarType } from './types';
 import CosmosCanvas from './components/CosmosCanvas';
 import LeftMenu from './components/LeftMenu';
 import AddNodeModal from './components/AddNodeModal';
+import BookshelfScanModal from './components/BookshelfScanModal';
 import Legend from './components/Legend';
 import AIPanel from './components/AIPanel';
 import NodeDetail from './components/NodeDetail';
@@ -33,6 +34,7 @@ export default function App() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addType, setAddType] = useState<StarType | null>(null);
+  const [showScan, setShowScan] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const demoLoaded = useRef(false);
 
@@ -40,6 +42,11 @@ export default function App() {
 
   const handleAdd = useCallback((type: StarType) => {
     setAddType(type);
+  }, []);
+
+  const handleAddBooks = useCallback((titles: string[]) => {
+    const newNodes = titles.map(title => makeNode('book', title, ''));
+    setNodes(prev => [...prev, ...newNodes]);
   }, []);
 
   const handleSubmit = useCallback((title: string, description: string) => {
@@ -110,6 +117,7 @@ export default function App() {
       <LeftMenu
         nodes={nodes}
         onAdd={handleAdd}
+        onScanBookshelf={() => setShowScan(true)}
         onDemo={handleDemo}
         onSelectNode={id => { setSelectedId(id); setShowAI(false); }}
       />
@@ -140,6 +148,13 @@ export default function App() {
           type={addType}
           onClose={() => setAddType(null)}
           onSubmit={handleSubmit}
+        />
+      )}
+
+      {showScan && (
+        <BookshelfScanModal
+          onClose={() => setShowScan(false)}
+          onAddBooks={handleAddBooks}
         />
       )}
 
