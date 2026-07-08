@@ -12,6 +12,15 @@ interface Props {
   onAddBooks: (titles: string[]) => void;
 }
 
+const DEMO_BOOKS: DetectedBook[] = [
+  { title: 'サピエンス全史',     author: 'ユヴァル・ノア・ハラリ', checked: true },
+  { title: '人新世の資本論',     author: '斎藤幸平',               checked: true },
+  { title: 'LIFE SHIFT',         author: 'リンダ・グラットン',      checked: true },
+  { title: '嫌われる勇気',       author: '岸見一郎',               checked: true },
+  { title: '武器になる哲学',     author: '山口周',                 checked: true },
+  { title: '思考の整理学',       author: '外山滋比古',             checked: false },
+];
+
 async function scanBookshelf(imageBase64: string, mimeType: string): Promise<DetectedBook[]> {
   const res = await fetch('/api/scan-bookshelf', {
     method: 'POST',
@@ -42,8 +51,8 @@ export default function BookshelfScanModal({ onClose, onAddBooks }: Props) {
   const [preview, setPreview] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [books, setBooks] = useState<DetectedBook[]>([]);
-  const [phase, setPhase] = useState<'upload' | 'scanning' | 'result' | 'error'>('upload');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [phase, setPhase] = useState<'upload' | 'scanning' | 'result'>('upload');
+  const [isDemo, setIsDemo] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (f: File) => {
@@ -51,6 +60,13 @@ export default function BookshelfScanModal({ onClose, onAddBooks }: Props) {
     setPreview(URL.createObjectURL(f));
     setPhase('upload');
     setBooks([]);
+    setIsDemo(false);
+  };
+
+  const handleDemo = () => {
+    setBooks(DEMO_BOOKS);
+    setIsDemo(true);
+    setPhase('result');
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -66,10 +82,13 @@ export default function BookshelfScanModal({ onClose, onAddBooks }: Props) {
       const { base64, mimeType } = await toBase64(file);
       const detected = await scanBookshelf(base64, mimeType);
       setBooks(detected);
+      setIsDemo(false);
       setPhase('result');
     } catch {
-      setErrorMsg('スキャンに失敗しました。APIキーを設定してください。');
-      setPhase('error');
+      // APIキーなしの場合はデモデータで動作を見せる
+      setBooks(DEMO_BOOKS);
+      setIsDemo(true);
+      setPhase('result');
     }
   };
 
@@ -120,31 +139,53 @@ export default function BookshelfScanModal({ onClose, onAddBooks }: Props) {
         </div>
 
         {/* Upload zone */}
-        {!preview && (
-          <div
-            className="flex flex-col items-center justify-center gap-3 rounded-xl py-10 cursor-pointer transition-all"
-            style={{ border: `2px dashed ${color}40`, background: `${color}08` }}
-            onDragOver={e => e.preventDefault()}
-            onDrop={handleDrop}
-            onClick={() => inputRef.current?.click()}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = `${color}80`; e.currentTarget.style.background = `${color}12`; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = `${color}40`; e.currentTarget.style.background = `${color}08`; }}
-          >
-            <span className="text-3xl">📷</span>
-            <div className="text-center">
-              <p className="text-sm text-white font-medium">写真をアップロード</p>
-              <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                ドラッグ＆ドロップ、またはクリックして選択
-              </p>
+        {!preview && phase === 'upload' && (
+          <div className="flex flex-col gap-3">
+            <div
+              className="flex flex-col items-center justify-center gap-3 rounded-xl py-8 cursor-pointer transition-all"
+              style={{ border: `2px dashed ${color}40`, background: `${color}08` }}
+              onDragOver={e => e.preventDefault()}
+              onDrop={handleDrop}
+              onClick={() => inputRef.current?.click()}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = `${color}80`; e.currentTarget.style.background = `${color}12`; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = `${color}40`; e.currentTarget.style.background = `${color}08`; }}
+            >
+              <span className="text-3xl">📷</span>
+              <div className="text-center">
+                <p className="text-sm text-white font-medium">写真をアップロード</p>
+                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  ドラッグ＆ドロップ、またはクリックして選択
+                </p>
+              </div>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              />
             </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-            />
+
+            <div className="flex items-center gap-3">
+              <div className="flex-1" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} />
+              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>または</span>
+              <div className="flex-1" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} />
+            </div>
+
+            <button
+              onClick={handleDemo}
+              className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.55)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; }}
+            >
+              ⭐ デモで試す（サンプルの本棚を読み込む）
+            </button>
           </div>
         )}
 
@@ -170,27 +211,23 @@ export default function BookshelfScanModal({ onClose, onAddBooks }: Props) {
           </div>
         )}
 
-        {/* Error */}
-        {phase === 'error' && (
-          <div className="rounded-xl px-4 py-3 text-center" style={{ background: 'rgba(255,60,60,0.08)', border: '1px solid rgba(255,60,60,0.2)' }}>
-            <p className="text-sm" style={{ color: 'rgba(255,120,120,0.9)' }}>{errorMsg}</p>
-            <button
-              onClick={() => { setPhase('upload'); setPreview(''); setFile(null); }}
-              className="text-xs mt-2 px-3 py-1.5 rounded-full transition-all"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
-            >
-              もう一度試す
-            </button>
-          </div>
-        )}
-
         {/* Results */}
         {phase === 'result' && books.length > 0 && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                {books.length}冊を検出しました
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  {books.length}冊を検出しました
+                </p>
+                {isDemo && (
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(255,215,0,0.15)', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,215,0,0.8)' }}
+                  >
+                    デモ
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => setBooks(prev => prev.map(b => ({ ...b, checked: !prev.every(b2 => b2.checked) })))}
                 className="text-xs"
